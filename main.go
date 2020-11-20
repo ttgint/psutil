@@ -35,7 +35,7 @@ func getHardwareData() string {
 	handle(err)
 
 	percentage, err := cpu.Percent(time.Second, true)
-	total, err := cpu.Percent(time.Second, true)
+	total, err := cpu.Percent(time.Second, false)
 	handle(err)
 
 	// host or machine kernel, uptime, platform Info
@@ -62,7 +62,7 @@ func getHardwareData() string {
 	// r.WriteString("Model Name: " + cpuStat[0].ModelName + "\n")
 	// r.WriteString("Speed: " + strconv.FormatFloat(cpuStat[0].Mhz, 'f', 2, 64) + " MHz \n")
 
-	r.WriteString("Total CPU usage: " + strconv.FormatFloat(total[0], 'f', 2, 64) + "%\n")
+	r.WriteString("Total CPU utilization: " + strconv.FormatFloat(total[0], 'f', 2, 64) + "%\n")
 	for idx, cpupercent := range percentage {
 		r.WriteString("Current CPU utilization: [" + strconv.Itoa(idx) + "] " + strconv.FormatFloat(cpupercent, 'f', 2, 64) + "%\n")
 	}
