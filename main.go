@@ -100,6 +100,7 @@ func GetHardwareData() string {
 }
 
 func main() {
+	ioutil.WriteFile(time.Now().Format("20060102_150405"), []byte(GetHardwareData()), 0644)
 	for range time.Tick(time.Minute * 10) {
 		ioutil.WriteFile(time.Now().Format("20060102_150405"), []byte(GetHardwareData()), 0644)
 	}
