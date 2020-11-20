@@ -8,24 +8,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/host"
-	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
-func dealwithErr(err error) {
+func handle(err error) {
 	if err != nil {
 		fmt.Println(err)
-		//os.Exit(-1)
 	}
 }
 
-func GetHardwareData() string {
+func getHardwareData() string {
 	runtimeOS := runtime.GOOS
 	// memory
 	vmStat, err := mem.VirtualMemory()
-	dealwithErr(err)
+	handle(err)
 
 	// disk - start from "/" mount point for Linux
 	// might have to change for Windows!!
@@ -33,20 +32,15 @@ func GetHardwareData() string {
 	// then use "\" instead of "/"
 
 	diskStat, err := disk.Usage("/")
-	dealwithErr(err)
+	handle(err)
 
-	// cpu - get CPU number of cores and speed
-	cpuStat, err := cpu.Info()
-	dealwithErr(err)
-	percentage, err := cpu.Percent(0, true)
-	dealwithErr(err)
+	percentage, err := cpu.Percent(time.Second, true)
+	total, err := cpu.Percent(time.Second, true)
+	handle(err)
 
 	// host or machine kernel, uptime, platform Info
 	hostStat, err := host.Info()
-	dealwithErr(err)
-
-	// get interfaces MAC/hardware address
-	dealwithErr(err)
+	handle(err)
 
 	var r strings.Builder
 
@@ -56,27 +50,19 @@ func GetHardwareData() string {
 	r.WriteString("Free memory: " + strconv.FormatUint(vmStat.Free, 10) + " bytes\n")
 	r.WriteString("Percentage used memory: " + strconv.FormatFloat(vmStat.UsedPercent, 'f', 2, 64) + "%\n")
 
-	// get disk serial number.... strange... not available from disk package at compile time
-	// undefined: disk.GetDiskSerialNumber
-	//serial := disk.GetDiskSerialNumber("/dev/sda")
-
-	//r.WriteString("Disk serial number: " + serial + "\n"
-
 	r.WriteString("Total disk space: " + strconv.FormatUint(diskStat.Total, 10) + " bytes \n")
 	r.WriteString("Used disk space: " + strconv.FormatUint(diskStat.Used, 10) + " bytes\n")
 	r.WriteString("Free disk space: " + strconv.FormatUint(diskStat.Free, 10) + " bytes\n")
 	r.WriteString("Percentage disk space usage: " + strconv.FormatFloat(diskStat.UsedPercent, 'f', 2, 64) + "%\n")
 
-	// since my machine has one CPU, I'll use the 0 index
-	// if your machine has more than 1 CPU, use the correct index
-	// to get the proper data
-	r.WriteString("CPU index number: " + strconv.FormatInt(int64(cpuStat[0].CPU), 10) + "\n")
-	r.WriteString("VendorID: " + cpuStat[0].VendorID + "\n")
-	r.WriteString("Family: " + cpuStat[0].Family + "\n")
-	r.WriteString("Number of cores: " + strconv.FormatInt(int64(cpuStat[0].Cores), 10) + "\n")
-	r.WriteString("Model Name: " + cpuStat[0].ModelName + "\n")
-	r.WriteString("Speed: " + strconv.FormatFloat(cpuStat[0].Mhz, 'f', 2, 64) + " MHz \n")
+	// r.WriteString("CPU index number: " + strconv.FormatInt(int64(cpuStat[0].CPU), 10) + "\n")
+	// r.WriteString("VendorID: " + cpuStat[0].VendorID + "\n")
+	// r.WriteString("Family: " + cpuStat[0].Family + "\n")
+	// r.WriteString("Number of cores: " + strconv.FormatInt(int64(cpuStat[0].Cores), 10) + "\n")
+	// r.WriteString("Model Name: " + cpuStat[0].ModelName + "\n")
+	// r.WriteString("Speed: " + strconv.FormatFloat(cpuStat[0].Mhz, 'f', 2, 64) + " MHz \n")
 
+	r.WriteString("Total CPU usage: " + strconv.FormatFloat(total[0], 'f', 2, 64) + "%\n")
 	for idx, cpupercent := range percentage {
 		r.WriteString("Current CPU utilization: [" + strconv.Itoa(idx) + "] " + strconv.FormatFloat(cpupercent, 'f', 2, 64) + "%\n")
 	}
@@ -85,23 +71,14 @@ func GetHardwareData() string {
 	r.WriteString("Uptime: " + strconv.FormatUint(hostStat.Uptime, 10) + "\n")
 	r.WriteString("Number of processes running: " + strconv.FormatUint(hostStat.Procs, 10) + "\n")
 
-	// another way to get the operating system name
-	// both darwin for Mac OSX, For Linux, can be ubuntu as platform
-	// and linux for OS
-
-	r.WriteString("OS: " + hostStat.OS + "\n")
-	r.WriteString("Platform: " + hostStat.Platform + "\n")
-
-	// the unique hardware id for this machine
-	r.WriteString("Host ID(uuid): " + hostStat.HostID + "\n")
-
 	return r.String()
 
 }
 
 func main() {
-	ioutil.WriteFile(time.Now().Format("20060102_150405"), []byte(GetHardwareData()), 0644)
+	fmt.Println(getHardwareData())
+	ioutil.WriteFile(time.Now().Format("20060102_150405.txt"), []byte(getHardwareData()), 0644)
 	for range time.Tick(time.Minute * 10) {
-		ioutil.WriteFile(time.Now().Format("20060102_150405"), []byte(GetHardwareData()), 0644)
+		ioutil.WriteFile(time.Now().Format("20060102_150405.txt"), []byte(getHardwareData()), 0644)
 	}
 }
